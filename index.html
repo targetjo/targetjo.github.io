@@ -1,2 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>作者，帅气的hanbiao</title>
+</head>
+<style>
 
-alert(123)
+    #cs {
+        border: 1px solid deepskyblue;
+    }
+</style>
+<body>
+
+<canvas width="800" height="600" id="cs"></canvas>
+
+
+<script src="sky.js"></script>
+<script src="bird.js"></script>
+<script src="land.js"></script>
+<script src="pipe.js"></script>
+<script src="time.js"></script>
+<script>
+    var cs = document.querySelector("#cs");
+    var ctx = cs.getContext("2d");
+
+
+    //图片加载的路径
+    var images = [
+        "images/birds.png",
+        "images/land.png",
+        "images/pipe1.png",
+        "images/pipe2.png",
+        "images/sky.png"
+    ];
+
+    //获取图片
+    loadImage(images, function (imgs) {
+
+        //创建一个数组，存储绘制的对象
+        var roles = [];
+
+        //todo 1 获取天空图片
+        //因为是构造函数，new Sky();
+        for (var i = 0; i < 2; i++) {
+            roles.push(new Sky({
+                image: imgs["images/sky.png"],
+                step: 2,
+                x: imgs["images/sky.png"].width * i,
+                ctx: ctx
+            }))
+        }
+
+        var pipes = [];
+        //todo 2 获取管道的图片
+        for (var i = 0; i < 6; i++) {
+            roles.push(new Pipe({
+                ctx: ctx,
+                topImage: imgs["images/pipe2.png"],
+                bottomImage: imgs["images/pipe1.png"],
+                x: 500 + 200 * i
+            }));
+        }
+
+        //todo 3 获取陆地的图片
+        for (var i = 0; i < 4; i++) {
+            roles.push(new Land({
+                ctx: ctx,
+                image: imgs["images/land.png"],
+                x: imgs["images/land.png"].width * i,
+                y: cs.height - imgs["images/land.png"].height
+            }));
+        }
+
+        //tode 4 时间的获取
+        roles.push(new Time({
+            ctx: ctx
+        }));
+
+        //todo 5 获取小鸟的图片
+        var bird = new Bird({
+            ctx: ctx,
+            x: 100,
+            y: 100,
+            image:imgs["images/birds.png"]
+        });
+        roles.push(bird);
+
+        //判断状态
+        var isRunning = true;
+
+
+
+        (function rander() {
+            ctx.clearRect(0, 0, cs.width, cs.height);
+
+            ctx.beginPath();
+
+            //把所有需要绘制的对象全部绘制到 画布上
+            roles.forEach(function (drawObj) {
+                drawObj.draw();
+            });
+
+            //判断小鸟上天入地的处理
+            if(bird.y < -10 || bird.y > cs.height - imgs["images/land.png"].height - 40) {
+                isRunning = false;
+            }
+
+
+            //判断小鸟与管道的撞击
+            if(ctx.isPointInPath(bird.x + bird.picW / 2,bird.y + bird.picH / 2)) {
+                isRunning = false;
+            }
+
+            if(isRunning) {
+                //相当于setTimeout，有默认的时间 17ms左右
+                requestAnimationFrame(rander);
+            }
+        })();
+        //绑定鼠标点击事件
+        document.onmousedown = function () {
+            //使速度的方向相反就行
+            bird.v = -bird.maxV / 2.5;
+            //v = -v;//一个很有趣的速度
+        };
+        document.onkeydown = function (e) {
+
+            if(e.keyCode == 9) {
+                bird.x += 100;
+            }
+            console.log(e.keyCode);
+        }
+    });
+
+
+    //角度转化为弧度
+    function convertAngle(angle) {
+        return Math.PI / 180 * angle;
+    }
+
+    //加载多张图片
+    function loadImage(imgNames, callback) {
+        var count = 0;
+        var imgs = {};
+        for (var i = 0; i < imgNames.length; i++) {
+            var img = new Image();
+            img.src = imgNames[i];
+
+            var imgName = imgNames[i];
+            imgs[imgName] = img;
+
+            img.onload = function () {
+                count++;
+                if (count == imgNames.length) {
+                    callback(imgs);
+                }
+            }
+        }
+    }
+
+
+</script>
+
+
+</body>
+</html>
